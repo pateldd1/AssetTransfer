@@ -15,7 +15,12 @@ contract AssetTransfer {
 
   struct Asset {
     uint id;
+<<<<<<< HEAD
     bytes32 name;
+=======
+    string name;
+    uint price;
+>>>>>>> 47873d22ab5d4872fa4256e5785ccf7bf3a4695c
   }
 
   address admin;
@@ -26,6 +31,8 @@ contract AssetTransfer {
   mapping (address => Company) public companies;
   bytes32[10] public allCompanies;
   bytes32[10] public allAssets;
+
+  mapping (address => uint) balances;
 
   mapping(address => mapping (address => uint)) allowed;
 
@@ -54,11 +61,17 @@ contract AssetTransfer {
     NewCompanyRegistered(_owner, companyID);
   }
 
+<<<<<<< HEAD
   function registerNewAssetToCompany(address _owner, bytes32 _name) public returns (uint assetID) {
     assetID = numAssets++;
     companies[_owner].assets[assetID] = Asset(assetID, _name);
     companies[_owner].companyAssets[companies[_owner].assetIdx] = _name;
     companies[_owner].assetIdx++;
+=======
+  function registerNewAssetToCompany(address _owner, string _name, uint _price) public returns (uint assetID) {
+    assetID = numAssets++;
+    companies[_owner].assets[assetID]= Asset(assetID, _name, _price);
+>>>>>>> 47873d22ab5d4872fa4256e5785ccf7bf3a4695c
     assetRegistry[assetID] = _owner;
     NewAssetRegisteredToCompany(_owner, assetID);
   }
@@ -83,6 +96,15 @@ contract AssetTransfer {
     Transfer(_from, _to, _assetId);
   }
 
+  function priceOf(uint _assetId) internal view returns (uint _price) {
+    return companies[ownerOf(_assetId)].assets[_assetId].price;
+  }
+
+  function withdraw() public {
+    msg.sender.transfer(balances[msg.sender]);
+    delete balances[msg.sender];
+  }
+
   /* ERC721 implementation */
 
   function name() public pure returns (bytes32 _name) {
@@ -105,10 +127,13 @@ contract AssetTransfer {
     return assetRegistry[_tokenId];
   }
 
-  function approve(address _to, uint _tokenId) public {
+  function approve(address _to, uint _tokenId) public payable {
     require(validateAssetId(_tokenId));
     require(msg.sender == ownerOf(_tokenId));
     require(msg.sender != _to);
+    require(msg.value >= priceOf(_tokenId));
+
+    balances[ownerOf(_tokenId)] += msg.value;
 
     allowed[msg.sender][_to] = _tokenId;
     Approval(msg.sender, _to, _tokenId);
